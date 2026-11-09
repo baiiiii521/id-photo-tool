@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>证件照排版制作 — 做照 · 排版 · 切图</title>
+<style>
+/* 证件照排版制作 · Apple 组合风格
+   首页 = apple.com 产品页（风格 2）：白底居中大标题、渐变眉题、蓝色胶囊、白/蓝/红证件照扇形、黑底检验单渐变大数字；
+   工具区 = 苹果软件质感（风格 1）：#f5f5f7 底、白卡柔影、大圆角、SF 字体栈。类名与 id 与 app.js 契约保持不变。 */
+:root{
+  --bg:#f5f5f7; --card:#fff; --ink:#1d1d1f; --soft:#6e6e73; --faint:#86868b; --line:#d2d2d7;
+  --blue:#0071e3; --blue-dark:#0060c9; --link:#0066cc;
+  --ease:cubic-bezier(0.22,1,0.36,1);
+  --shadow-card:0 4px 24px rgba(0,0,0,.06), 0 1px 4px rgba(0,0,0,.04);
+  --shadow-lift:0 16px 48px rgba(0,0,0,.14), 0 2px 8px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue','PingFang SC','Microsoft YaHei',sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid rgba(0,113,227,.55);outline-offset:2px;border-radius:6px}
+
+/* ---------- 首页 Hero（风格 2） ---------- */
+.hero{background:#fff;text-align:center;padding:72px 20px 0;overflow:hidden}
+.hero-eyebrow{
+  margin:0 0 12px;font-size:19px;font-weight:600;
+  background:linear-gradient(90deg,#0090ff,#a259ff 55%,#ff6482);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero-title{margin:0;font-size:76px;line-height:1.05;font-weight:700;letter-spacing:-.028em}
+.hero-sub{margin:20px auto 0;font-size:22px;color:var(--soft);max-width:640px}
+.hero-cta{margin-top:28px;display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap}
+.btn-hero{
+  border:0;border-radius:999px;background:var(--blue);color:#fff;
+  font-size:17px;font-weight:500;padding:12px 30px;
+  transition:background 300ms var(--ease),transform 300ms var(--ease);
+}
+.btn-hero:hover{background:var(--blue-dark)}
+.btn-hero:active{transform:scale(.97)}
+.hero-meta{font-size:14px;color:var(--faint)}
+.hero-fan{margin:54px auto -6px;height:248px;max-width:720px;position:relative}
+.fan-photo{
+  position:absolute;left:50%;bottom:0;width:188px;height:236px;border-radius:14px;
+  box-shadow:var(--shadow-lift);border:1px solid rgba(0,0,0,.06);overflow:hidden;
+  display:grid;place-items:end center;
+  transition:transform 500ms var(--ease);
+}
+.fan-photo svg{position:absolute;inset:auto 0 0 0;width:100%;height:82%;fill:rgba(20,24,40,.28)}
+.fan-white{background:#ffffff;transform:translateX(-128%) rotate(-7deg)}
+.fan-blue{background:#2f6fdb;transform:translateX(-50%);z-index:2}
+.fan-blue svg{fill:rgba(255,255,255,.4)}
+.fan-red{background:#d43a31;transform:translateX(28%) rotate(7deg)}
+.fan-red svg{fill:rgba(255,255,255,.38)}
+.fan-tag{
+  position:relative;z-index:1;margin-bottom:10px;font-size:12px;font-weight:600;
+  background:rgba(255,255,255,.88);color:var(--ink);padding:3px 10px;border-radius:999px;
+}
+.fan-blue .fan-tag,.fan-red .fan-tag{background:rgba(0,0,0,.28);color:#fff}
+.hero:hover .fan-white{transform:translateX(-136%) rotate(-9deg)}
+.hero:hover .fan-red{transform:translateX(36%) rotate(9deg)}
+
+/* ---------- 黑底检验单 ---------- */
+.spec-band{background:#000;color:#fff;margin:24px auto 0;max-width:1080px;border-radius:28px;padding:48px 32px 56px}
+.spec-title{margin:0 0 36px;text-align:center;font-size:15px;font-weight:600;color:#a1a1a6;letter-spacing:.02em}
+.spec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;text-align:center}
+.spec{display:grid;gap:10px;justify-items:center}
+.spec-num{font-size:64px;line-height:1;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.spec-num.grad-a{background:linear-gradient(120deg,#0090ff,#a259ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.spec-num.grad-b{background:linear-gradient(120deg,#a259ff,#ff6482);-webkit-background-clip:text;background-clip:text;color:transparent}
+.spec-num.grad-c{background:linear-gradient(120deg,#ff9f0a,#ff6482);-webkit-background-clip:text;background-clip:text;color:transparent}
+.spec-cap{font-size:15px;color:#a1a1a6;max-width:230px}
+
+/* ---------- 工具区（风格 1 苹果软件质感） ---------- */
+.tabs{display:flex;gap:4px;padding:4px;background:rgba(0,0,0,.05);border-radius:999px;width:max-content;max-width:calc(100vw - 40px);margin:32px auto 0;overflow-x:auto}
+.tabs button{
+  border:0;background:transparent;padding:8px 20px;border-radius:999px;white-space:nowrap;
+  font-size:15px;font-weight:500;color:var(--soft);
+  transition:background 300ms var(--ease),color 300ms var(--ease),transform 300ms var(--ease);
+}
+.tabs button:active{transform:scale(.97)}
+.tabs button:hover{color:var(--ink)}
+.tabs button.active{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.panel{
+  display:none;max-width:1080px;margin:16px auto 24px;
+  background:var(--card);border-radius:24px;box-shadow:var(--shadow-card);padding:24px;
+}
+.panel.active{display:block}
+.row,.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.btn{
+  border:0;border-radius:999px;padding:9px 18px;background:rgba(0,0,0,.05);
+  font-size:14px;font-weight:500;color:var(--ink);
+  transition:background 300ms var(--ease),transform 300ms var(--ease);
+}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{background:var(--blue-dark)}
+.btn.small{padding:6px 14px;font-size:13px}
+.file-btn{display:inline-block;background:var(--blue);color:#fff}
+.file-btn:hover{background:var(--blue-dark)}
+.hint{color:var(--soft);font-size:13px}
+.group{margin:16px 0}
+.group-title{font-weight:600;margin-bottom:10px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:0;background:rgba(0,0,0,.05);border-radius:14px;padding:8px 12px;
+  font-size:13px;text-align:left;color:var(--ink);
+  transition:background 300ms var(--ease),transform 300ms var(--ease);
+}
+.chip:active{transform:scale(.97)}
+.chip.active{background:var(--ink);color:#fff}
+.chip small{display:block;color:var(--faint);font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:11px}
+.chip.active small{color:#c7c7cc}
+.custom-spec input,.controls input[type=number]{
+  width:84px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:#fff;color:var(--ink);
+}
+.controls select{
+  padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;color:var(--ink);
+}
+.controls input[type=range]{accent-color:var(--blue)}
+.stage-wrap{margin:14px 0}
+.stage-wrap canvas{max-width:100%;background:#1d1d1f;border-radius:16px;touch-action:none;box-shadow:var(--shadow-card)}
+#lay-stage{background:#e8e8ed}
+#spec-info,#lay-info,#split-info,#make-result{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+footer{max-width:1080px;margin:0 auto;color:var(--faint);font-size:12px;padding:4px 24px 32px;text-align:center}
+
+@media (max-width:560px){
+  .hero{padding:52px 16px 0}
+  .hero-title{font-size:46px}
+  .hero-eyebrow{font-size:16px}
+  .hero-sub{font-size:18px}
+  .hero-fan{height:196px;margin-top:42px}
+  .fan-photo{width:140px;height:180px}
+  .fan-white{transform:translateX(-112%) rotate(-7deg)}
+  .fan-red{transform:translateX(12%) rotate(7deg)}
+  .spec-band{margin:16px 12px 0;padding:40px 20px 44px}
+  .spec-grid{grid-template-columns:1fr;gap:34px}
+  .spec-num{font-size:52px}
+  .panel{margin:12px 12px 20px;padding:18px;border-radius:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important}
+}
+
+</style>
+</head>
+<body>
+<header class="hero">
+  <p class="hero-eyebrow">证件照排版制作 · 做照 / 排版 / 切图</p>
+  <h1 class="hero-title">证件照。<br>分毫不差。</h1>
+  <p class="hero-sub">选规格、裁尺寸、控体积、排相纸，全程在本地完成，照片不上传。</p>
+  <div class="hero-cta">
+    <button type="button" class="btn-hero" id="hero-pick">选择照片</button>
+    <span class="hero-meta">支持 12 种常用规格 · 导出 300 DPI</span>
+  </div>
+  <div class="hero-fan" aria-hidden="true">
+    <div class="fan-photo fan-white">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="38" r="17"/><path d="M14 100c3-22 18-32 36-32s33 10 36 32z"/></svg>
+      <span class="fan-tag">白底</span>
+    </div>
+    <div class="fan-photo fan-blue">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="38" r="17"/><path d="M14 100c3-22 18-32 36-32s33 10 36 32z"/></svg>
+      <span class="fan-tag">蓝底</span>
+    </div>
+    <div class="fan-photo fan-red">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="38" r="17"/><path d="M14 100c3-22 18-32 36-32s33 10 36 32z"/></svg>
+      <span class="fan-tag">红底</span>
+    </div>
+  </div>
+</header>
+
+<section class="spec-band" aria-label="检验单">
+  <p class="spec-title">检验单 · 每张导出都核对一遍</p>
+  <div class="spec-grid">
+    <div class="spec">
+      <span class="spec-num grad-a">600×600</span>
+      <span class="spec-cap">像素尺寸，与所选规格分毫不差</span>
+    </div>
+    <div class="spec">
+      <span class="spec-num grad-b">212.4 KB</span>
+      <span class="spec-cap">文件体积，卡进报名系统的上限</span>
+    </div>
+    <div class="spec">
+      <span class="spec-num grad-c">58%</span>
+      <span class="spec-cap">头部占比，落在标准区间正中</span>
+    </div>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button data-tab="make" class="active">① 做证件照</button>
+  <button data-tab="layout">② 排版打印</button>
+  <button data-tab="split">③ 切图</button>
+</nav>
+
+<!-- ============ 做证件照 ============ -->
+<section id="tab-make" class="panel active">
+  <div class="row">
+    <label class="btn file-btn">上传照片<input type="file" id="make-file" accept="image/*" hidden></label>
+    <span id="make-file-name" class="hint">先选一张正面照片（自拍/生活照都行）</span>
+  </div>
+
+  <div class="group">
+    <div class="group-title">选规格（点一下，裁剪框比例和导出像素跟着变）</div>
+    <div id="spec-chips" class="chips"></div>
+    <div class="row custom-spec">
+      <span>自定义：</span>
+      <input type="number" id="cust-w" placeholder="宽 mm" min="5" max="200"> ×
+      <input type="number" id="cust-h" placeholder="高 mm" min="5" max="200"> mm
+      <button id="cust-apply" class="btn small">用这个尺寸</button>
+      <span class="hint">报名系统只给像素也行：宽 <input type="number" id="cust-pw" placeholder="px"> × 高 <input type="number" id="cust-ph" placeholder="px"> px <button id="cust-px-apply" class="btn small">用这个像素</button></span>
+    </div>
+    <div id="spec-info" class="hint"></div>
+  </div>
+
+  <div class="stage-wrap">
+    <canvas id="make-stage" width="680" height="560"></canvas>
+    <div class="hint">拖动照片调整位置，滑杆缩放；虚线是头顶/下巴参考位，头放进椭圆里最稳</div>
+  </div>
+
+  <div class="controls">
+    <label>缩放 <input type="range" id="make-zoom" min="100" max="300" value="100"></label>
+    <button id="make-rot" class="btn small">旋转 90°</button>
+    <button id="make-flip" class="btn small">左右翻转</button>
+    <label><input type="checkbox" id="make-guides" checked> 参考线</label>
+  </div>
+
+  <div class="controls">
+    <span>换底色（Beta，纯色底照片适用）：</span>
+    <select id="make-bg">
+      <option value="">不换底</option>
+    </select>
+    <label>容差 <input type="range" id="make-bg-tol" min="10" max="80" value="32"></label>
+  </div>
+
+  <div class="controls">
+    <span>导出体积上限（报名常用）：</span>
+    <select id="make-kb">
+      <option value="0">不限制</option>
+      <option value="200">≤200 KB</option>
+      <option value="100">≤100 KB</option>
+      <option value="50">≤50 KB</option>
+      <option value="30">≤30 KB</option>
+      <option value="20">≤20 KB</option>
+    </select>
+    <button id="make-export" class="btn primary">导出单张证件照</button>
+    <button id="make-to-layout" class="btn">导出并送去排版 →</button>
+    <span id="make-result" class="hint"></span>
+  </div>
+</section>
+
+<!-- ============ 排版打印 ============ -->
+<section id="tab-layout" class="panel">
+  <div class="row">
+    <label class="btn file-btn">上传已有证件照<input type="file" id="lay-file" accept="image/*" hidden></label>
+    <span class="hint">也可以从「做证件照」直接送过来</span>
+  </div>
+  <div class="controls">
+    <label>照片规格 <select id="lay-spec"></select></label>
+    <label>相纸 <select id="lay-paper"></select></label>
+    <label>间距 <input type="range" id="lay-gap" min="0" max="5" step="0.5" value="2"> <span id="lay-gap-v">2mm</span></label>
+    <label>页边距 <input type="range" id="lay-margin" min="0" max="6" step="0.5" value="2"> <span id="lay-margin-v">2mm</span></label>
+  </div>
+  <div class="controls">
+    <label>裁切线
+      <select id="lay-cut">
+        <option value="dash">虚线（剪的时候照着剪）</option>
+        <option value="corner">四角标记（画面最干净）</option>
+        <option value="none">不画线</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="lay-rotate"> 允许旋转照片多排几张（照片会横过来）</label>
+  </div>
+  <div class="stage-wrap">
+    <canvas id="lay-stage" width="680" height="560"></canvas>
+    <div id="lay-info" class="hint"></div>
+  </div>
+  <div class="controls">
+    <button id="lay-export" class="btn primary">导出排版图（300 DPI · JPG）</button>
+    <span class="hint">拿给打印店时说：按原尺寸、100% 不缩放打印</span>
+  </div>
+</section>
+
+<!-- ============ 切图 ============ -->
+<section id="tab-split" class="panel">
+  <div class="row">
+    <label class="btn file-btn">上传整版图<input type="file" id="split-file" accept="image/*" hidden></label>
+    <span class="hint">排版图、拼图、扫描的整版照片都能切回单张</span>
+  </div>
+  <div class="controls">
+    <label>行数 <input type="number" id="split-rows" value="4" min="1" max="20"></label>
+    <label>列数 <input type="number" id="split-cols" value="3" min="1" max="20"></label>
+    <label>内缩去边 <input type="range" id="split-inset" min="0" max="10" value="2"> <span id="split-inset-v">2px</span></label>
+    <button id="split-use-layout" class="btn small">用排版页的行列数</button>
+  </div>
+  <div class="stage-wrap">
+    <canvas id="split-stage" width="680" height="560"></canvas>
+    <div id="split-info" class="hint"></div>
+  </div>
+  <div class="controls">
+    <button id="split-go" class="btn primary">切开并逐张下载</button>
+  </div>
+</section>
+
+<footer>规格口径：像素 = 毫米 ÷ 25.4 × DPI（默认 300，身份证电子照为官方 358×441px @350DPI）· 排版默认间距/边距 2mm</footer>
+
+<script>
+document.getElementById('hero-pick').addEventListener('click', function () {
+  document.getElementById('tab-make').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(function () { document.getElementById('make-file').click(); }, 350);
+});
+</script>
+<script>
+/* photo-core.js — 证件照「做照 / 排版 / 切图」共用核心
+ * 纯函数、无 DOM 依赖：浏览器、Node 测试、微信小程序（require）三处通用。
+ * 尺寸口径：毫米为物理真值，像素 = mm / 25.4 * DPI，默认 300 DPI。
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  root.PhotoCore = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  var DEFAULT_DPI = 300;
+
+  function mmToPx(mm, dpi) { return Math.round(mm / 25.4 * (dpi || DEFAULT_DPI)); }
+
+  /* ---------- 规格库（已按公开规格表交叉核对，2026-11-09） ---------- */
+  // dpi 例外：身份证官方电子照 358×441px @350dpi（26×32mm），单列标注。
+  var SPECS = [
+    { id: 'yicun',    name: '一寸',     wMm: 25, hMm: 35, dpi: 300, use: '简历 / 考试报名 / 入职' },
+    { id: 'xiaoyicun',name: '小一寸',   wMm: 22, hMm: 32, dpi: 300, use: '驾驶证 / 健康证' },
+    { id: 'dayicun',  name: '大一寸',   wMm: 33, hMm: 48, dpi: 300, use: '护照 / 港澳通行证 / 毕业照' },
+    { id: 'ercun',    name: '二寸',     wMm: 35, hMm: 49, dpi: 300, use: '毕业证 / 职称 / 档案' },
+    { id: 'xiaoercun',name: '小二寸',   wMm: 35, hMm: 45, dpi: 300, use: '申根签证 / 部分公务员' },
+    { id: 'daercun',  name: '大二寸',   wMm: 35, hMm: 53, dpi: 300, use: '照相馆冲印 / 档案照' },
+    { id: 'idcard',   name: '身份证',   wMm: 26, hMm: 32, dpi: 350, use: '居民身份证 / 社保卡（358×441px）' },
+    { id: 'passport', name: '护照',     wMm: 33, hMm: 48, dpi: 300, use: '中国护照（同大一寸）' },
+    { id: 'usvisa',   name: '美国签证', wMm: 51, hMm: 51, dpi: 300, use: '赴美签证（方形）' },
+    { id: 'jpvisa',   name: '日本签证', wMm: 45, hMm: 45, dpi: 300, use: '日本签证（方形）' },
+    { id: 'teacher',  name: '教师资格', wMm: 30, hMm: 40, dpi: 300, use: '教师资格证报名' },
+    { id: 'sancun',   name: '三寸',     wMm: 55, hMm: 84, dpi: 300, use: '生活照 / 钱包照' }
+  ];
+
+  function specPx(spec) {
+    return { w: mmToPx(spec.wMm, spec.dpi), h: mmToPx(spec.hMm, spec.dpi) };
+  }
+
+  /* ---------- 相纸库 ---------- */
+  var PAPERS = [
+    { id: '5inch', name: '5寸相纸', wMm: 89,  hMm: 127 },
+    { id: '6inch', name: '6寸相纸', wMm: 102, hMm: 152 },
+    { id: '7inch', name: '7寸相纸', wMm: 127, hMm: 178 },
+    { id: 'a6',    name: 'A6',      wMm: 105, hMm: 148 },
+    { id: 'a4',    name: 'A4',      wMm: 210, hMm: 297 },
+    { id: 'a5',    name: 'A5',      wMm: 148, hMm: 210 }
+  ];
+
+  /* ---------- 排版 ----------
+   * 输入照片 mm、相纸 mm、间距 gapMm、页边距 marginMm。
+   * 默认不旋转照片（人像必须正立）；allowRotate=true 时比较旋转 90° 的张数取多者。
+   * 返回 { cols, rows, count, rotated, originXmm, originYmm, cellWmm, cellHmm }
+   */
+  function computeLayout(photo, paper, opt) {
+    opt = opt || {};
+    var gap = opt.gapMm != null ? opt.gapMm : 2;
+    var margin = opt.marginMm != null ? opt.marginMm : 2;
+    function fit(pw, ph) {
+      var cols = Math.floor((paper.wMm - 2 * margin + gap) / (pw + gap));
+      var rows = Math.floor((paper.hMm - 2 * margin + gap) / (ph + gap));
+      if (cols < 0) cols = 0; if (rows < 0) rows = 0;
+      return { cols: cols, rows: rows, count: cols * rows };
+    }
+    var normal = fit(photo.wMm, photo.hMm);
+    var best = { cols: normal.cols, rows: normal.rows, count: normal.count, rotated: false };
+    if (opt.allowRotate) {
+      var rot = fit(photo.hMm, photo.wMm);
+      if (rot.count > best.count) best = { cols: rot.cols, rows: rot.rows, count: rot.count, rotated: true };
+    }
+    var cellW = best.rotated ? photo.hMm : photo.wMm;
+    var cellH = best.rotated ? photo.wMm : photo.hMm;
+    var usedW = best.cols * cellW + (best.cols - 1) * gap;
+    var usedH = best.rows * cellH + (best.rows - 1) * gap;
+    best.cellWmm = cellW; best.cellHmm = cellH; best.gapMm = gap;
+    best.originXmm = (paper.wMm - usedW) / 2;
+    best.originYmm = (paper.hMm - usedH) / 2;
+    return best;
+  }
+
+  // 每个单元格在相纸上的像素矩形（供 canvas 绘制与切图复用）
+  function layoutCellsPx(layout, paper, dpi) {
+    dpi = dpi || DEFAULT_DPI;
+    var cells = [];
+    for (var r = 0; r < layout.rows; r++) {
+      for (var c = 0; c < layout.cols; c++) {
+        cells.push({
+          x: mmToPx(layout.originXmm + c * (layout.cellWmm + layout.gapMm), dpi),
+          y: mmToPx(layout.originYmm + r * (layout.cellHmm + layout.gapMm), dpi),
+          w: mmToPx(layout.cellWmm, dpi),
+          h: mmToPx(layout.cellHmm, dpi),
+          row: r, col: c
+        });
+      }
+    }
+    return { cells: cells, paperWpx: mmToPx(paper.wMm, dpi), paperHpx: mmToPx(paper.hMm, dpi) };
+  }
+
+  /* ---------- 切图 ----------
+   * 把一张图按 rows×cols 网格切回单张。gapPx 为格间留白（切时内缩一半，避免带白边/串色）。
+   */
+  function computeSlices(imgW, imgH, rows, cols, opt) {
+    opt = opt || {};
+    var inset = opt.insetPx || 0;
+    var cellW = imgW / cols, cellH = imgH / rows;
+    var out = [];
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        out.push({
+          x: Math.round(c * cellW + inset), y: Math.round(r * cellH + inset),
+          w: Math.round(cellW - inset * 2), h: Math.round(cellH - inset * 2),
+          row: r, col: c, index: r * cols + c
+        });
+      }
+    }
+    return out;
+  }
+
+  /* ---------- 裁剪 ----------
+   * 给定原图尺寸与目标宽高比，返回居中最大裁剪框（用户拖动/缩放是在此基础上调 offset/scale）。
+   */
+  function centerCropRect(imgW, imgH, ratioW, ratioH) {
+    var ratio = ratioW / ratioH;
+    var w = imgW, h = imgW / ratio;
+    if (h > imgH) { h = imgH; w = imgH * ratio; }
+    return { x: (imgW - w) / 2, y: (imgH - h) / 2, w: w, h: h };
+  }
+
+  /* ---------- 换底（Beta） ----------
+   * 纯色底证件照的近似换色：以四角采样色为原底色，容差内像素替换为目标色，边缘 1 级羽化。
+   * 复杂背景不适用，需服务端 AI 抠图（见 README v2）。
+   */
+  function shouldReplacePixel(r, g, b, base, tol) {
+    var dr = r - base.r, dg = g - base.g, db = b - base.b;
+    return (dr * dr + dg * dg + db * db) <= tol * tol * 3;
+  }
+
+  var BG_COLORS = [
+    { id: 'white', name: '白底', hex: '#ffffff', rgb: { r: 255, g: 255, b: 255 } },
+    { id: 'blue',  name: '蓝底', hex: '#438edb', rgb: { r: 67,  g: 142, b: 219 } },
+    { id: 'red',   name: '红底', hex: '#ff0000', rgb: { r: 255, g: 0,   b: 0 } },
+    { id: 'gray',  name: '灰底', hex: '#888888', rgb: { r: 136, g: 136, b: 136 } }
+  ];
+
+  return {
+    DEFAULT_DPI: DEFAULT_DPI, mmToPx: mmToPx,
+    SPECS: SPECS, specPx: specPx, PAPERS: PAPERS,
+    computeLayout: computeLayout, layoutCellsPx: layoutCellsPx,
+    computeSlices: computeSlices, centerCropRect: centerCropRect,
+    shouldReplacePixel: shouldReplacePixel, BG_COLORS: BG_COLORS
+  };
+});
+
+</script>
+<script>
+'use strict';
+var C = window.PhotoCore;
+function $(id) { return document.getElementById(id); }
+function download(blob, name) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+function loadImg(file, cb) {
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = function () { cb(img); };
+  img.src = url;
+}
+function canvasToJpeg(canvas, maxKB, cb) {
+  var qs = [0.95, 0.92, 0.88, 0.84, 0.8, 0.74, 0.68, 0.6, 0.5, 0.42, 0.34];
+  if (!maxKB) { canvas.toBlob(function (b) { cb(b, 0.95); }, 'image/jpeg', 0.95); return; }
+  var limit = maxKB * 1024, best = null, i = 0;
+  (function next() {
+    if (i >= qs.length) { cb(best.blob, best.q); return; }
+    var q = qs[i++];
+    canvas.toBlob(function (b) {
+      if (!best || b.size < best.blob.size) best = { blob: b, q: q };
+      if (b.size <= limit) { cb(b, q); return; }
+      next();
+    }, 'image/jpeg', q);
+  })();
+}
+
+/* ---------------- tabs ---------------- */
+document.querySelectorAll('.tabs button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.tabs button').forEach(function (x) { x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function (x) { x.classList.remove('active'); });
+    b.classList.add('active');
+    $('tab-' + b.dataset.tab).classList.add('active');
+    if (b.dataset.tab === 'layout') drawLayout();
+    if (b.dataset.tab === 'split') drawSplit();
+  });
+});
+function gotoTab(name) {
+  document.querySelector('.tabs button[data-tab="' + name + '"]').click();
+}
+
+/* ---------------- 做证件照 ---------------- */
+var make = { img: null, spec: C.SPECS[0], zoom: 1, dx: 0, dy: 0, geom: null };
+
+var chips = $('spec-chips');
+C.SPECS.forEach(function (s) {
+  var px = C.specPx(s);
+  var b = document.createElement('button');
+  b.className = 'chip' + (s.id === make.spec.id ? ' active' : '');
+  b.innerHTML = s.name + '<small>' + s.wMm + '×' + s.hMm + 'mm · ' + px.w + '×' + px.h + 'px</small>';
+  b.addEventListener('click', function () {
+    make.spec = s;
+    chips.querySelectorAll('.chip').forEach(function (x) { x.classList.remove('active'); });
+    b.classList.add('active');
+    specInfo(); drawMake();
+  });
+  chips.appendChild(b);
+});
+function specInfo() {
+  var s = make.spec, px = currentPx();
+  $('spec-info').textContent = s.name + '：' + s.wMm + '×' + s.hMm + 'mm · 导出 ' + px.w + '×' + px.h + 'px @' + (s.dpi || 300) + 'DPI' + (s.use ? ' · ' + s.use : '');
+}
+function currentPx() {
+  if (make.spec.pxW) return { w: make.spec.pxW, h: make.spec.pxH };
+  return C.specPx(make.spec);
+}
+$('cust-apply').addEventListener('click', function () {
+  var w = parseFloat($('cust-w').value), h = parseFloat($('cust-h').value);
+  if (!w || !h) return;
+  make.spec = { id: 'custom', name: '自定义', wMm: w, hMm: h, dpi: 300 };
+  specInfo(); drawMake();
+});
+$('cust-px-apply').addEventListener('click', function () {
+  var w = parseInt($('cust-pw').value, 10), h = parseInt($('cust-ph').value, 10);
+  if (!w || !h) return;
+  make.spec = { id: 'custompx', name: '自定义像素', wMm: Math.round(w / 300 * 25.4 * 10) / 10, hMm: Math.round(h / 300 * 25.4 * 10) / 10, dpi: 300, pxW: w, pxH: h };
+  specInfo(); drawMake();
+});
+var bgSel = $('make-bg');
+C.BG_COLORS.forEach(function (bg) {
+  var o = document.createElement('option'); o.value = bg.id; o.textContent = bg.name; bgSel.appendChild(o);
+});
+
+$('make-file').addEventListener('change', function (e) {
+  if (!e.target.files[0]) return;
+  $('make-file-name').textContent = e.target.files[0].name;
+  loadImg(e.target.files[0], function (img) {
+    make.img = img; make.dx = 0; make.dy = 0; make.zoom = 1; $('make-zoom').value = 100;
+    drawMake();
+  });
+});
+
+function makeGeom() {
+  var px = currentPx(), ratio = px.w / px.h;
+  var maxW = 400, maxH = 470;
+  var bw = Math.min(maxW, maxH * ratio), bh = bw / ratio;
+  if (bh > maxH) { bh = maxH; bw = bh * ratio; }
+  return { x: 340 - bw / 2, y: 280 - bh / 2, w: bw, h: bh };
+}
+function drawMake() {
+  var cv = $('make-stage'), ctx = cv.getContext('2d');
+  ctx.fillStyle = '#33302b'; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (!make.img) {
+    ctx.fillStyle = '#cfd6de'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('上传照片后在这里裁剪', 340, 280); return;
+  }
+  var g = makeGeom(), img = make.img;
+  var s0 = Math.max(g.w / img.naturalWidth, g.h / img.naturalHeight);
+  var s = s0 * make.zoom;
+  var ox = g.x + g.w / 2 - img.naturalWidth * s / 2 + make.dx;
+  var oy = g.y + g.h / 2 - img.naturalHeight * s / 2 + make.dy;
+  make.geom = { g: g, s: s, ox: ox, oy: oy };
+  ctx.save(); ctx.globalAlpha = 0.35;
+  ctx.drawImage(img, ox, oy, img.naturalWidth * s, img.naturalHeight * s); ctx.restore();
+  ctx.save(); ctx.beginPath(); ctx.rect(g.x, g.y, g.w, g.h); ctx.clip();
+  ctx.drawImage(img, ox, oy, img.naturalWidth * s, img.naturalHeight * s); ctx.restore();
+  ctx.strokeStyle = '#2f6fdb'; ctx.lineWidth = 2; ctx.strokeRect(g.x, g.y, g.w, g.h);
+  if ($('make-guides').checked) {
+    ctx.strokeStyle = 'rgba(255,80,80,.85)'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y + g.h * 0.10); ctx.lineTo(g.x + g.w, g.y + g.h * 0.10); // 头顶线
+    ctx.moveTo(g.x, g.y + g.h * 0.68); ctx.lineTo(g.x + g.w, g.y + g.h * 0.68); // 下巴线
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(255,255,255,.9)';
+    ctx.beginPath(); ctx.ellipse(g.x + g.w / 2, g.y + g.h * 0.39, g.w * 0.30, g.h * 0.29, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,80,80,.9)'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('头顶', g.x + 4, g.y + g.h * 0.10 - 4);
+    ctx.fillText('下巴', g.x + 4, g.y + g.h * 0.68 - 4);
+  }
+}
+(function () {
+  var cv = $('make-stage'), drag = null;
+  cv.addEventListener('pointerdown', function (e) { drag = { x: e.offsetX, y: e.offsetY, dx: make.dx, dy: make.dy }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    make.dx = drag.dx + (e.offsetX - drag.x); make.dy = drag.dy + (e.offsetY - drag.y); drawMake();
+  });
+  cv.addEventListener('pointerup', function () { drag = null; });
+})();
+$('make-zoom').addEventListener('input', function (e) { make.zoom = e.target.value / 100; drawMake(); });
+$('make-guides').addEventListener('change', drawMake);
+
+function bakeTransform(mode) {
+  if (!make.img) return;
+  var img = make.img, c = document.createElement('canvas'), ctx = c.getContext('2d');
+  if (mode === 'rot') { c.width = img.naturalHeight; c.height = img.naturalWidth; ctx.translate(c.width / 2, c.height / 2); ctx.rotate(Math.PI / 2); }
+  else { c.width = img.naturalWidth; c.height = img.naturalHeight; ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height);
+  if (mode === 'rot') { ctx.translate(c.width / 2, c.height / 2); ctx.rotate(Math.PI / 2); ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2); }
+  else { ctx.translate(c.width, 0); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); }
+  var ni = new Image();
+  ni.onload = function () { make.img = ni; make.dx = 0; make.dy = 0; make.zoom = 1; $('make-zoom').value = 100; drawMake(); };
+  ni.src = c.toDataURL('image/png');
+}
+$('make-rot').addEventListener('click', function () { bakeTransform('rot'); });
+$('make-flip').addEventListener('click', function () { bakeTransform('flip'); });
+
+function renderSingle() {
+  if (!make.img || !make.geom) return null;
+  var px = currentPx(), gm = make.geom, g = gm.g;
+  var sx = (g.x - gm.ox) / gm.s, sy = (g.y - gm.oy) / gm.s, sw = g.w / gm.s, sh = g.h / gm.s;
+  var out = document.createElement('canvas'); out.width = px.w; out.height = px.h;
+  var ctx = out.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, px.w, px.h);
+  ctx.drawImage(make.img, sx, sy, sw, sh, 0, 0, px.w, px.h);
+  var bgId = bgSel.value;
+  if (bgId) {
+    var bg = C.BG_COLORS.find(function (b) { return b.id === bgId; });
+    var tol = parseInt($('make-bg-tol').value, 10);
+    var idata = ctx.getImageData(0, 0, px.w, px.h), d = idata.data;
+    // 四角采样原底色
+    function pxAt(x, y) { var i = (y * px.w + x) * 4; return { r: d[i], g: d[i + 1], b: d[i + 2] }; }
+    var cs = [pxAt(2, 2), pxAt(px.w - 3, 2), pxAt(2, px.h - 3), pxAt(px.w - 3, px.h - 3)];
+    var base = { r: 0, g: 0, b: 0 };
+    cs.forEach(function (p) { base.r += p.r / 4; base.g += p.g / 4; base.b += p.b / 4; });
+    for (var i = 0; i < d.length; i += 4) {
+      if (C.shouldReplacePixel(d[i], d[i + 1], d[i + 2], base, tol)) { d[i] = bg.rgb.r; d[i + 1] = bg.rgb.g; d[i + 2] = bg.rgb.b; }
+    }
+    ctx.putImageData(idata, 0, 0);
+  }
+  return out;
+}
+function doExportSingle(thenLayout) {
+  var out = renderSingle();
+  if (!out) { $('make-result').textContent = '先上传照片'; return; }
+  var maxKB = parseInt($('make-kb').value, 10) || 0;
+  canvasToJpeg(out, maxKB, function (blob, q) {
+    download(blob, '证件照-' + make.spec.name + '-' + out.width + 'x' + out.height + '.jpg');
+    $('make-result').textContent = '已导出 ' + out.width + '×' + out.height + 'px · ' + Math.round(blob.size / 1024) + ' KB（质量 ' + Math.round(q * 100) + '%）';
+    if (thenLayout) {
+      var img = new Image();
+      img.onload = function () {
+        lay.img = img;
+        if (C.SPECS.some(function (s) { return s.id === make.spec.id; })) laySpec.value = make.spec.id;
+        gotoTab('layout');
+      };
+      img.src = URL.createObjectURL(blob);
+    }
+  });
+}
+$('make-export').addEventListener('click', function () { doExportSingle(false); });
+$('make-to-layout').addEventListener('click', function () { doExportSingle(true); });
+
+/* ---------------- 排版 ---------------- */
+var lay = { img: null, lastLayout: null };
+var laySpec = $('lay-spec'), layPaper = $('lay-paper');
+C.SPECS.forEach(function (s) { var o = document.createElement('option'); o.value = s.id; o.textContent = s.name + ' ' + s.wMm + '×' + s.hMm + 'mm'; laySpec.appendChild(o); });
+C.PAPERS.forEach(function (p) { var o = document.createElement('option'); o.value = p.id; o.textContent = p.name + ' ' + p.wMm + '×' + p.hMm + 'mm'; layPaper.appendChild(o); });
+layPaper.value = '6inch';
+$('lay-file').addEventListener('change', function (e) {
+  if (!e.target.files[0]) return;
+  loadImg(e.target.files[0], function (img) { lay.img = img; drawLayout(); });
+});
+[laySpec, layPaper, $('lay-cut'), $('lay-rotate')].forEach(function (el) { el.addEventListener('change', drawLayout); });
+$('lay-gap').addEventListener('input', function (e) { $('lay-gap-v').textContent = e.target.value + 'mm'; drawLayout(); });
+$('lay-margin').addEventListener('input', function (e) { $('lay-margin-v').textContent = e.target.value + 'mm'; drawLayout(); });
+
+function layParams() {
+  var spec = C.SPECS.find(function (s) { return s.id === laySpec.value; });
+  var paper = C.PAPERS.find(function (p) { return p.id === layPaper.value; });
+  var layout = C.computeLayout(spec, paper, {
+    gapMm: parseFloat($('lay-gap').value), marginMm: parseFloat($('lay-margin').value),
+    allowRotate: $('lay-rotate').checked
+  });
+  return { spec: spec, paper: paper, layout: layout };
+}
+function paintLayout(ctx, scale, fullRes) {
+  var p = layParams(), layout = p.layout;
+  lay.lastLayout = layout;
+  var cells = C.layoutCellsPx(layout, p.paper, 300);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cells.paperWpx * scale, cells.paperHpx * scale);
+  cells.cells.forEach(function (cell) {
+    var x = cell.x * scale, y = cell.y * scale, w = cell.w * scale, h = cell.h * scale;
+    if (lay.img) {
+      ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+      if (layout.rotated) {
+        ctx.translate(x + w / 2, y + h / 2); ctx.rotate(Math.PI / 2);
+        ctx.drawImage(lay.img, -h / 2, -w / 2, h, w);
+      } else {
+        // cover 填充
+        var ir = lay.img.naturalWidth / lay.img.naturalHeight, cr = w / h;
+        var dw = w, dh = h;
+        if (ir > cr) { dw = h * ir; } else { dh = w / ir; }
+        ctx.drawImage(lay.img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+      }
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#dbe7f7'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#5b7aa6'; ctx.font = Math.max(10, 12 * scale * (fullRes ? 300 / 40 : 1)) + 'px sans-serif'; ctx.textAlign = 'center';
+    }
+    var cut = $('lay-cut').value;
+    ctx.strokeStyle = 'rgba(120,120,120,.8)';
+    if (cut === 'dash') { ctx.setLineDash([8 * scale, 6 * scale]); ctx.lineWidth = Math.max(1, scale); ctx.strokeRect(x, y, w, h); ctx.setLineDash([]); }
+    else if (cut === 'corner') {
+      var L = Math.min(w, h) * 0.14, o = 3 * scale;
+      ctx.lineWidth = Math.max(1, 1.4 * scale); ctx.beginPath();
+      [[x - o, y - o, 1, 1], [x + w + o, y - o, -1, 1], [x - o, y + h + o, 1, -1], [x + w + o, y + h + o, -1, -1]].forEach(function (cn) {
+        ctx.moveTo(cn[0] + L * cn[2], cn[1]); ctx.lineTo(cn[0], cn[1]); ctx.lineTo(cn[0], cn[1] + L * cn[3]);
+      });
+      ctx.stroke();
+    }
+  });
+  return cells;
+}
+function drawLayout() {
+  var cv = $('lay-stage'), ctx = cv.getContext('2d');
+  ctx.fillStyle = '#ece9e2'; ctx.fillRect(0, 0, cv.width, cv.height);
+  var p = layParams();
+  var scale = Math.min(620 / C.mmToPx(p.paper.wMm, 300), 500 / C.mmToPx(p.paper.hMm, 300));
+  ctx.save(); ctx.translate((cv.width - C.mmToPx(p.paper.wMm, 300) * scale) / 2, 20);
+  ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 12;
+  paintLayout(ctx, scale, false);
+  ctx.restore();
+  $('lay-info').textContent = p.paper.name + ' · ' + p.spec.name + '：' + p.layout.cols + ' 列 × ' + p.layout.rows + ' 行 = ' + p.layout.count + ' 张' +
+    (p.layout.rotated ? '（照片已旋转）' : '') + ' · 整版 ' + C.mmToPx(p.paper.wMm, 300) + '×' + C.mmToPx(p.paper.hMm, 300) + 'px @300DPI' +
+    (lay.img ? '' : ' · 还没放照片，先显示占位格');
+}
+$('lay-export').addEventListener('click', function () {
+  var p = layParams();
+  var cells = C.layoutCellsPx(p.layout, p.paper, 300);
+  var out = document.createElement('canvas'); out.width = cells.paperWpx; out.height = cells.paperHpx;
+  paintLayout(out.getContext('2d'), 1, true);
+  canvasToJpeg(out, 0, function (blob) { download(blob, '排版-' + p.spec.name + '-' + p.paper.name + '-' + p.layout.count + '张.jpg'); });
+});
+
+/* ---------------- 切图 ---------------- */
+var split = { img: null };
+$('split-file').addEventListener('change', function (e) {
+  if (!e.target.files[0]) return;
+  loadImg(e.target.files[0], function (img) { split.img = img; drawSplit(); });
+});
+[$('split-rows'), $('split-cols')].forEach(function (el) { el.addEventListener('input', drawSplit); });
+$('split-inset').addEventListener('input', function (e) { $('split-inset-v').textContent = e.target.value + 'px'; });
+$('split-use-layout').addEventListener('click', function () {
+  if (lay.lastLayout) { $('split-rows').value = lay.lastLayout.rows; $('split-cols').value = lay.lastLayout.cols; drawSplit(); }
+});
+function drawSplit() {
+  var cv = $('split-stage'), ctx = cv.getContext('2d');
+  ctx.fillStyle = '#33302b'; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (!split.img) {
+    ctx.fillStyle = '#cfd6de'; ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('上传整版图后在这里预览切分线', 340, 280); return;
+  }
+  var img = split.img, rows = parseInt($('split-rows').value, 10) || 1, cols = parseInt($('split-cols').value, 10) || 1;
+  var scale = Math.min(640 / img.naturalWidth, 520 / img.naturalHeight);
+  var w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+  var ox = (cv.width - w) / 2, oy = (cv.height - h) / 2;
+  ctx.drawImage(img, ox, oy, w, h);
+  ctx.strokeStyle = 'rgba(255,60,60,.9)'; ctx.lineWidth = 1.5; ctx.setLineDash([7, 5]);
+  for (var c = 1; c < cols; c++) { ctx.beginPath(); ctx.moveTo(ox + w * c / cols, oy); ctx.lineTo(ox + w * c / cols, oy + h); ctx.stroke(); }
+  for (var r = 1; r < rows; r++) { ctx.beginPath(); ctx.moveTo(ox, oy + h * r / rows); ctx.lineTo(ox + w, oy + h * r / rows); ctx.stroke(); }
+  ctx.setLineDash([]);
+  var s0 = C.computeSlices(img.naturalWidth, img.naturalHeight, rows, cols, { insetPx: parseInt($('split-inset').value, 10) || 0 })[0];
+  $('split-info').textContent = '将切成 ' + (rows * cols) + ' 张，每张约 ' + s0.w + '×' + s0.h + 'px';
+}
+$('split-go').addEventListener('click', function () {
+  if (!split.img) return;
+  var img = split.img, rows = parseInt($('split-rows').value, 10) || 1, cols = parseInt($('split-cols').value, 10) || 1;
+  var slices = C.computeSlices(img.naturalWidth, img.naturalHeight, rows, cols, { insetPx: parseInt($('split-inset').value, 10) || 0 });
+  slices.forEach(function (sl, i) {
+    setTimeout(function () {
+      var c = document.createElement('canvas'); c.width = sl.w; c.height = sl.h;
+      c.getContext('2d').drawImage(img, sl.x, sl.y, sl.w, sl.h, 0, 0, sl.w, sl.h);
+      canvasToJpeg(c, 0, function (blob) { download(blob, '切图-' + String(sl.index + 1).padStart(2, '0') + '.jpg'); });
+    }, i * 400);
+  });
+  $('split-info').textContent = '正在逐张下载 ' + slices.length + ' 张（浏览器可能提示允许批量下载）';
+});
+
+/* init */
+specInfo(); drawMake(); drawLayout(); drawSplit();
+
+</script>
+</body>
+</html>
